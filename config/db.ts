@@ -11,10 +11,11 @@ const connectDB = async (): Promise<void> => {
   }
 
   try {
-    const mongoURI = process.env.MONGODB_URI;
+    // Support both variable names for flexibility
+    const mongoURI = process.env.MONGODB_URI || process.env.MONGO_URI;
 
     if (!mongoURI) {
-      throw new Error("MONGODB_URI is not defined in environment variables");
+      throw new Error("MONGODB_URI environment variable is not defined");
     }
 
     const conn = await mongoose.connect(mongoURI, {
@@ -30,14 +31,7 @@ const connectDB = async (): Promise<void> => {
     console.log("========================================");
     console.log("✅ Database Connected Successfully!");
     console.log("========================================");
-    console.log(`📊 Database Name: ${conn.connection.name}`);
     console.log(`🔗 Host: ${conn.connection.host}`);
-    console.log(`🔌 Port: ${conn.connection.port || "N/A (Atlas)"}`);
-    console.log(
-      `🌐 Connection State: ${
-        conn.connection.readyState === 1 ? "Connected" : "Disconnected"
-      }`
-    );
     console.log(`⏰ Connected At: ${new Date().toLocaleString()}`);
     console.log("========================================\n");
   } catch (error) {
@@ -72,11 +66,6 @@ mongoose.connection.on("disconnected", () => {
 mongoose.connection.on("error", (err) => {
   isConnected = false;
   console.error("❌ MongoDB connection error:", err);
-});
-
-mongoose.connection.on("reconnected", () => {
-  isConnected = true;
-  console.log("🔄 MongoDB reconnected");
 });
 
 export default connectDB;

@@ -126,11 +126,8 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   });
 });
 
-// Start server only in development (not for Vercel serverless)
-// Check if this file is being run directly
-const isMainModule =
-  require.main === module || process.env.NODE_ENV !== "production";
-if (process.env.NODE_ENV !== "production") {
+// Start server only if this file is run directly
+if (require.main === module) {
   const startServer = async (): Promise<void> => {
     try {
       // Connect to database first
