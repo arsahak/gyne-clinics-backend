@@ -126,11 +126,6 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   });
 });
 
-// Connect to database immediately
-connectDB().catch((err) => {
-  console.error("Failed to connect to database:", err);
-});
-
 // Start server only in development (not for Vercel serverless)
 // Check if this file is being run directly
 const isMainModule =
