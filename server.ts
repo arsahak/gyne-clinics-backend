@@ -1,6 +1,6 @@
 import cors from "cors";
 import dotenv from "dotenv";
-import express, { Application, Request, Response, NextFunction } from "express";
+import express, { Application, NextFunction, Request, Response } from "express";
 import mongoose from "mongoose";
 import morgan from "morgan";
 import path from "path";
@@ -121,36 +121,44 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   });
 });
 
-// Start server
-const startServer = async (): Promise<void> => {
-  try {
-    // Connect to database first
-    await connectDB();
-
-    // Start listening after database connection
-    app.listen(PORT, () => {
-      console.log("========================================");
-      console.log("🚀 Server Started Successfully!");
-      console.log("========================================");
-      console.log(`🌐 Environment: ${process.env.NODE_ENV || "development"}`);
-      console.log(`🔗 Server URL: http://localhost:${PORT}`);
-      console.log(`📡 API Health: http://localhost:${PORT}/api/health`);
-      console.log(`⏰ Started At: ${new Date().toLocaleString()}`);
-      console.log("========================================\n");
-    });
-  } catch (error) {
-    console.error("Failed to start server:", error);
-    process.exit(1);
-  }
-};
-
-// Handle unhandled promise rejections
-process.on("unhandledRejection", (err: Error) => {
-  console.error("Unhandled Rejection:", err);
-  process.exit(1);
+// Initialize database connection
+connectDB().catch((error) => {
+  console.error("Failed to connect to database:", error);
 });
 
-// Start the server
-startServer();
+// Start server only in development (not for Vercel serverless)
+if (process.env.NODE_ENV !== "production") {
+  const startServer = async (): Promise<void> => {
+    try {
+      // Connect to database first
+      await connectDB();
 
+      // Start listening after database connection
+      app.listen(PORT, () => {
+        console.log("========================================");
+        console.log("🚀 Server Started Successfully!");
+        console.log("========================================");
+        console.log(`🌐 Environment: ${process.env.NODE_ENV || "development"}`);
+        console.log(`🔗 Server URL: http://localhost:${PORT}`);
+        console.log(`📡 API Health: http://localhost:${PORT}/api/health`);
+        console.log(`⏰ Started At: ${new Date().toLocaleString()}`);
+        console.log("========================================\n");
+      });
+    } catch (error) {
+      console.error("Failed to start server:", error);
+      process.exit(1);
+    }
+  };
+
+  // Handle unhandled promise rejections
+  process.on("unhandledRejection", (err: Error) => {
+    console.error("Unhandled Rejection:", err);
+    process.exit(1);
+  });
+
+  // Start the server
+  startServer();
+}
+
+// Export the Express app for Vercel serverless
 export default app;
