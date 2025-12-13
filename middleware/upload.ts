@@ -2,17 +2,24 @@ import { Request } from "express";
 import fs from "fs";
 import multer, { FileFilterCallback } from "multer";
 import path from "path";
+import { getUploadPath } from "../utils/paths";
+
+// Get upload directories using the utility function
+const uploadsDir = getUploadPath();
+const tempDir = getUploadPath("temp");
 
 // Ensure uploads directory exists
-const uploadsDir = path.join(__dirname, "../../uploads");
-const tempDir = path.join(uploadsDir, "temp");
+try {
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
 
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-if (!fs.existsSync(tempDir)) {
-  fs.mkdirSync(tempDir, { recursive: true });
+  if (!fs.existsSync(tempDir)) {
+    fs.mkdirSync(tempDir, { recursive: true });
+  }
+} catch (error) {
+  // In serverless, /tmp should already exist, but handle gracefully
+  console.warn("Warning: Could not create upload directory:", error);
 }
 
 // Configure storage

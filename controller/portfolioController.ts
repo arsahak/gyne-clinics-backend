@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import path from "path";
 import { AuthRequest } from "../middleware/auth";
 import Portfolio from "../modal/portfolio";
 import { convertToWebP, deleteImage } from "../utils/imageProcessor";
+import { getUploadPath, getUploadUrl, getUploadFilePath } from "../utils/paths";
 
 // Helper function to process uploaded image
 async function processUploadedImage(
@@ -10,7 +10,7 @@ async function processUploadedImage(
   folder: string = "portfolio"
 ): Promise<string> {
   try {
-    const uploadsDir = path.join(__dirname, "../../uploads", folder);
+    const uploadsDir = getUploadPath(folder);
     const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
 
     // Convert to WebP
@@ -21,11 +21,7 @@ async function processUploadedImage(
     });
 
     // Return relative URL path
-    const relativePath = path.relative(
-      path.join(__dirname, "../../uploads"),
-      webpPath
-    );
-    return `/uploads/${relativePath.replace(/\\/g, "/")}`;
+    return getUploadUrl(webpPath);
   } catch (error) {
     console.error("Error processing uploaded image:", error);
     throw error;
@@ -101,11 +97,7 @@ export const updatePortfolio = async (
     } else {
       // Delete old images if new ones are uploaded
       if (updateData.appLogo && portfolio.appLogo) {
-        const oldLogoPath = path.join(
-          __dirname,
-          "../../uploads",
-          portfolio.appLogo.replace("/uploads/", "")
-        );
+        const oldLogoPath = getUploadFilePath(portfolio.appLogo);
         try {
           await deleteImage(oldLogoPath);
         } catch (error) {
@@ -114,11 +106,7 @@ export const updatePortfolio = async (
       }
 
       if (updateData.favicon && portfolio.favicon) {
-        const oldFaviconPath = path.join(
-          __dirname,
-          "../../uploads",
-          portfolio.favicon.replace("/uploads/", "")
-        );
+        const oldFaviconPath = getUploadFilePath(portfolio.favicon);
         try {
           await deleteImage(oldFaviconPath);
         } catch (error) {

@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import morgan from "morgan";
 import path from "path";
 import connectDB from "./config/db";
+import { getUploadsDir } from "./utils/paths";
 import admissionRoutes from "./routes/admission";
 import attendanceRoutes from "./routes/attendance";
 import authRoutes from "./routes/auth";
@@ -36,7 +37,14 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 
 // Serve static files from uploads directory
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+// Note: In serverless environments, static file serving may not work
+// Consider using cloud storage (S3, Cloudinary, etc.) for production
+try {
+  const uploadsDir = getUploadsDir();
+  app.use("/uploads", express.static(uploadsDir));
+} catch (error) {
+  console.warn("Warning: Could not set up static file serving for uploads:", error);
+}
 
 // Root route
 app.get("/", (_req: Request, res: Response) => {
