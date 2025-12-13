@@ -121,10 +121,18 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   });
 });
 
-// Initialize database connection
-connectDB().catch((error) => {
-  console.error("Failed to connect to database:", error);
-});
+// Initialize database connection for production (Vercel serverless)
+let dbConnected = false;
+if (process.env.NODE_ENV === "production") {
+  connectDB()
+    .then(() => {
+      dbConnected = true;
+      console.log("✅ Database connected in production mode");
+    })
+    .catch((error) => {
+      console.error("❌ Failed to connect to database:", error);
+    });
+}
 
 // Start server only in development (not for Vercel serverless)
 if (process.env.NODE_ENV !== "production") {

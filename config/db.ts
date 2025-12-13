@@ -29,7 +29,11 @@ const connectDB = async (): Promise<void> => {
     console.error("========================================");
     console.error(error instanceof Error ? error.message : "Unknown error");
     console.error("========================================\n");
-    process.exit(1);
+    // Don't exit in production (serverless can't handle process.exit)
+    if (process.env.NODE_ENV !== "production") {
+      process.exit(1);
+    }
+    throw error;
   }
 };
 
