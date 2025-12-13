@@ -38,12 +38,27 @@ app.use(morgan("dev"));
 // Serve static files from uploads directory
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
-// Health check route
-app.get("", (_req: Request, res: Response) => {
+// Root route
+app.get("/", (_req: Request, res: Response) => {
   res.json({
     success: true,
     message: "E-commerce Dashboard API is running!",
+    version: "1.0.0",
     timestamp: new Date().toISOString(),
+  });
+});
+
+// Health check with database status
+app.get("/health", (_req: Request, res: Response) => {
+  const dbStatus =
+    mongoose.connection.readyState === 1 ? "connected" : "disconnected";
+  const isHealthy = mongoose.connection.readyState === 1;
+
+  res.status(isHealthy ? 200 : 503).json({
+    status: isHealthy ? "OK" : "ERROR",
+    timestamp: new Date().toISOString(),
+    database: dbStatus,
+    environment: process.env.NODE_ENV || "development",
   });
 });
 
@@ -51,18 +66,8 @@ app.get("", (_req: Request, res: Response) => {
 app.get("/api", (_req: Request, res: Response) => {
   res.json({
     success: true,
-    message: "App is running! Welcome to E-commerce Dashboard API",
+    message: "Welcome to E-commerce Dashboard API",
     timestamp: new Date().toISOString(),
-  });
-});
-
-// API routes (you can add more routes here)
-app.get("/api/health", (_req: Request, res: Response) => {
-  res.json({
-    success: true,
-    status: "healthy",
-    database:
-      mongoose.connection.readyState === 1 ? "connected" : "disconnected",
   });
 });
 
@@ -121,11 +126,16 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   });
 });
 
-// Connect to database
-connectDB();
+// Connect to database immediately
+connectDB().catch((err) => {
+  console.error("Failed to connect to database:", err);
+});
 
 // Start server only in development (not for Vercel serverless)
-if (process.env.NODE_ENV !== "production" && require.main === module) {
+// Check if this file is being run directly
+const isMainModule =
+  require.main === module || process.env.NODE_ENV !== "production";
+if (process.env.NODE_ENV !== "production") {
   const startServer = async (): Promise<void> => {
     try {
       // Connect to database first
