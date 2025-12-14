@@ -207,7 +207,7 @@ const orderSchema = new Schema<IOrder>(
     },
     customer: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Customer",
       required: true,
     },
     customerName: {
@@ -379,7 +379,9 @@ orderSchema.virtual("isPaid").get(function () {
 
 // Virtual for can cancel
 orderSchema.virtual("canCancel").get(function () {
-  return this.orderStatus && ["pending", "processing"].includes(this.orderStatus);
+  return (
+    this.orderStatus && ["pending", "processing"].includes(this.orderStatus)
+  );
 });
 
 // Virtual for can refund
