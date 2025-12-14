@@ -19,6 +19,8 @@ const connectDB = async (): Promise<void> => {
     }
 
     const conn = await mongoose.connect(mongoURI, {
+      // Database name
+      dbName: "gyneclinics",
       // Optimized for serverless/Vercel deployment
       serverSelectionTimeoutMS: 10000, // Timeout after 10s
       socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
@@ -32,6 +34,7 @@ const connectDB = async (): Promise<void> => {
     console.log("✅ Database Connected Successfully!");
     console.log("========================================");
     console.log(`🔗 Host: ${conn.connection.host}`);
+    console.log(`📊 Database: ${conn.connection.name}`);
     console.log(`⏰ Connected At: ${new Date().toLocaleString()}`);
     console.log("========================================\n");
   } catch (error) {
