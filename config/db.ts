@@ -33,12 +33,13 @@ const connectDB = async (): Promise<void> => {
         // Database name
         dbName: "gyneclinics",
         // Optimized for serverless/Vercel deployment
+        bufferCommands: false, // Disable buffering to fail fast if not connected
         serverSelectionTimeoutMS: 30000, // Increased to 30s (was 10s - causing timeouts)
         socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
         connectTimeoutMS: 30000, // Connection timeout set to 30s
         maxPoolSize: 10, // Maintain up to 10 socket connections
         minPoolSize: 0, // Changed from 1 to 0 for serverless (don't keep connections idle)
-        maxIdleTimeMS: 30000, // Increased from 10s to 30s
+        maxIdleTimeMS: 10000, // Reduced to 10s (was 30s) to release unused connections faster
         heartbeatFrequencyMS: 10000, // Send heartbeat every 10s to keep connection alive
         retryWrites: true,
         w: "majority",

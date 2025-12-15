@@ -1,4 +1,5 @@
-// Vercel serverless entry point
-const app = require("../server");
+import { VercelRequest, VercelResponse } from '@vercel/node';
+import app from '../server';
 
-module.exports = app;
+// Vercel serverless entry point
+export default app;
