@@ -3,9 +3,7 @@ import dotenv from "dotenv";
 import express, { Application, NextFunction, Request, Response } from "express";
 import mongoose from "mongoose";
 import morgan from "morgan";
-import path from "path";
 import connectDB from "./config/db";
-import { getUploadsDir } from "./utils/paths";
 import admissionRoutes from "./routes/admission";
 import attendanceRoutes from "./routes/attendance";
 import authRoutes from "./routes/auth";
@@ -16,6 +14,7 @@ import portfolioRoutes from "./routes/portfolio";
 import qrcodeRoutes from "./routes/qrcode";
 import smsRoutes from "./routes/sms";
 import userRoutes from "./routes/users";
+import { getUploadsDir } from "./utils/paths";
 
 // E-commerce routes
 import categoryRoutes from "./routes/category";
@@ -36,6 +35,21 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 
+// Database connection middleware for serverless environments
+app.use(async (_req: Request, _res: Response, next: NextFunction) => {
+  try {
+    // Ensure database is connected before handling requests
+    // This is important for serverless/Vercel where connections may be dropped
+    if (mongoose.connection.readyState !== 1) {
+      await connectDB();
+    }
+    next();
+  } catch (error) {
+    console.error("Database connection middleware error:", error);
+    next(error);
+  }
+});
+
 // Serve static files from uploads directory
 // Note: In serverless environments, static file serving may not work
 // Consider using cloud storage (S3, Cloudinary, etc.) for production
@@ -43,7 +57,10 @@ try {
   const uploadsDir = getUploadsDir();
   app.use("/uploads", express.static(uploadsDir));
 } catch (error) {
-  console.warn("Warning: Could not set up static file serving for uploads:", error);
+  console.warn(
+    "Warning: Could not set up static file serving for uploads:",
+    error
+  );
 }
 
 // Root route
