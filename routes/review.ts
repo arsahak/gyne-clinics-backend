@@ -10,7 +10,7 @@ import { authenticate, authorize } from "../middleware/auth";
 
 const router = express.Router();
 
-// Public routes
+// Public routes (authentication handled in controller for "me" parameter)
 router.get("/", getReviews);
 
 // Customer routes

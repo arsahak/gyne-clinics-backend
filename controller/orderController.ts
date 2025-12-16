@@ -3,6 +3,40 @@ import { AuthRequest } from "../middleware/auth"; // Import AuthRequest
 import Order from "../modal/order";
 import Product from "../modal/product";
 import User from "../modal/user";
+import Customer from "../modal/customer";
+
+// Helper function to find customer by ID (checks both Customer and User models)
+async function findCustomerById(customerId: string) {
+  // Try Customer model first (for e-commerce customers)
+  let customer = await Customer.findById(customerId);
+  
+  // If not found, try User model (for legacy/other users)
+  if (!customer) {
+    customer = await User.findById(customerId);
+  }
+  
+  return customer;
+}
+
+// Helper function to update customer stats (updates in correct model)
+async function updateCustomerStats(
+  customerId: string,
+  updateData: { $inc?: { totalOrders?: number; totalSpent?: number } }
+) {
+  // Try Customer model first
+  let customer = await Customer.findById(customerId);
+  
+  if (customer) {
+    await Customer.findByIdAndUpdate(customerId, updateData);
+    return;
+  }
+  
+  // If not found, try User model
+  customer = await User.findById(customerId);
+  if (customer) {
+    await User.findByIdAndUpdate(customerId, updateData);
+  }
+}
 
 // Get all orders with pagination and filters (Admin/Staff)
 export const getOrders = async (req: Request, res: Response) => {
@@ -227,12 +261,21 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
 
     // Get customer info
     console.log("Looking up customer with ID:", customerId);
-    const customerData = await User.findById(customerId);
+    if (!customerId) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required. Please sign in to place an order.",
+      });
+    }
+
+    // Find customer (checks both Customer and User models)
+    const customerData = await findCustomerById(customerId);
 
     if (!customerData) {
+      console.error("Customer not found with ID:", customerId);
       return res.status(404).json({
         success: false,
-        message: "Customer not found",
+        message: "Customer not found. Please ensure you are signed in with a valid account.",
       });
     }
 
@@ -276,8 +319,8 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
     });
 
     // Update customer stats
-    customerData.totalOrders += 1;
-    customerData.totalSpent += total;
+    customerData.totalOrders = (customerData.totalOrders || 0) + 1;
+    customerData.totalSpent = (customerData.totalSpent || 0) + total;
     customerData.lastOrderDate = new Date();
     await customerData.save();
 
@@ -364,7 +407,7 @@ export const deleteOrder = async (req: Request, res: Response) => {
 
     // Update customer stats
     if (order.orderStatus !== "cancelled" && order.orderStatus !== "refunded") {
-       await User.findByIdAndUpdate(order.customer, {
+       await updateCustomerStats(order.customer.toString(), {
          $inc: { totalOrders: -1, totalSpent: -order.total },
        });
     }
@@ -423,7 +466,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
         }
 
         // Update customer stats
-        await User.findByIdAndUpdate(order.customer, {
+        await updateCustomerStats(order.customer.toString(), {
           $inc: { totalOrders: -1, totalSpent: -order.total },
         });
       }
@@ -534,7 +577,7 @@ export const refundOrder = async (req: Request, res: Response) => {
     }
 
     // Update customer stats
-    await User.findByIdAndUpdate(order.customer, {
+    await updateCustomerStats(order.customer.toString(), {
       $inc: { totalSpent: -order.total },
     });
 

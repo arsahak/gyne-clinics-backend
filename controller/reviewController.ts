@@ -3,7 +3,8 @@ import { AuthRequest } from "../middleware/auth";
 import Order from "../modal/order";
 // Product is dynamically imported to avoid circular dependency issues if any
 import Review from "../modal/review";
-import User from "../modal/user"; // Import User to fetch name
+import Customer from "../modal/customer";
+import User from "../modal/user"; // Import User to fetch name (dashboard users)
 
 // Get reviews (Public/Admin)
 export const getReviews = async (req: Request, res: Response) => {
@@ -22,7 +23,34 @@ export const getReviews = async (req: Request, res: Response) => {
     const query: any = {};
 
     if (product) query.product = product;
-    if (customer) query.customer = customer;
+    
+    // Handle "me" as a special value for authenticated users
+    if (customer === "me") {
+      const authReq = req as AuthRequest;
+      // Try to get user from token if provided
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith("Bearer ")) {
+        try {
+          const { verifyAccessToken } = await import("../config/jwt");
+          const token = authHeader.substring(7);
+          const decoded = verifyAccessToken(token);
+          query.customer = decoded.userId;
+        } catch (error) {
+          return res.status(401).json({
+            success: false,
+            message: "Invalid token for 'me' query",
+          });
+        }
+      } else {
+        return res.status(401).json({
+          success: false,
+          message: "Authentication required for 'me' query",
+        });
+      }
+    } else if (customer) {
+      query.customer = customer;
+    }
+    
     if (status) query.status = status;
     if (rating) query.rating = rating;
 
@@ -64,9 +92,24 @@ export const createReview = async (req: AuthRequest, res: Response) => {
     const { product: productId, order: orderId, rating, comment, title, images } = req.body;
     const userId = req.user?.userId;
     
-    // Fetch user to get name
-    const user = await User.findById(userId);
-    const userName = user?.name || "Customer";
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authenticated",
+      });
+    }
+
+    // Fetch customer/user to get name (support both website customers and dashboard users)
+    let userName = "Customer";
+    const customer = await Customer.findById(userId);
+    if (customer) {
+      userName = customer.name;
+    } else {
+      const user = await User.findById(userId);
+      if (user?.name) {
+        userName = user.name;
+      }
+    }
 
     // 1. Verify Order
     const order = await Order.findOne({
