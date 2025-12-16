@@ -4,6 +4,7 @@ import { AuthRequest } from "../middleware/auth";
 import Category from "../modal/category";
 import Product from "../modal/product";
 import { uploadToImgBB } from "../utils/uploadToImgBB";
+import { processProductImagesToWebP } from "../utils/imageProcessor";
 
 // Get all products with pagination and filters
 export const getProducts = async (req: AuthRequest, res: Response) => {
@@ -68,9 +69,23 @@ export const getProducts = async (req: AuthRequest, res: Response) => {
 
     const total = await Product.countDocuments(query);
 
+    // Convert product images to WebP format
+    const productsWithWebP = await Promise.all(
+      products.map(async (product) => {
+        const productObj = product.toObject();
+        if (productObj.images && productObj.images.length > 0) {
+          productObj.images = await processProductImagesToWebP(
+            productObj.images,
+            85
+          );
+        }
+        return productObj;
+      })
+    );
+
     res.status(200).json({
       success: true,
-      data: products,
+      data: productsWithWebP,
       pagination: {
         total,
         page: Number(page),
@@ -105,9 +120,18 @@ export const getProduct = async (req: AuthRequest, res: Response) => {
       });
     }
 
+    // Convert product images to WebP format
+    const productObj = product.toObject();
+    if (productObj.images && productObj.images.length > 0) {
+      productObj.images = await processProductImagesToWebP(
+        productObj.images,
+        85
+      );
+    }
+
     return res.status(200).json({
       success: true,
-      data: product,
+      data: productObj,
     });
   } catch (error: any) {
     console.error("Error fetching product:", error);
