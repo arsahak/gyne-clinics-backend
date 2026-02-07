@@ -23,6 +23,10 @@ import orderRoutes from "./routes/order";
 import productRoutes from "./routes/product";
 import reviewRoutes from "./routes/review";
 
+// AI Chatbot routes
+import chatbotRoutes from "./routes/chatbot";
+import knowledgeBaseRoutes from "./routes/knowledgeBase";
+
 // Load environment variables
 dotenv.config();
 
@@ -132,6 +136,10 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/reviews", reviewRoutes);
+
+// AI Chatbot routes
+app.use("/api/chatbot", chatbotRoutes);
+app.use("/api/knowledge-base", knowledgeBaseRoutes);
 
 // 404 Handler
 app.use((_req: Request, res: Response) => {
