@@ -13,11 +13,20 @@ import {
 const router = express.Router();
 
 // Configure multer for file uploads
-const uploadDir = path.join(process.cwd(), "uploads", "knowledge-base");
+// Use /tmp for Vercel serverless environment, otherwise use local uploads
+const isVercel = process.env.VERCEL === "1";
+const uploadDir = isVercel
+  ? path.join("/tmp", "knowledge-base")
+  : path.join(process.cwd(), "uploads", "knowledge-base");
 
-// Ensure upload directory exists
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+// Ensure upload directory exists (only works in /tmp on Vercel)
+try {
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+} catch (error) {
+  console.warn("Could not create upload directory:", error);
+  // Don't fail - multer will handle the error when trying to save
 }
 
 const storage = multer.diskStorage({
